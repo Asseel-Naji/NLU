@@ -1,3 +1,19 @@
+#!/usr/bin/env python
+
+# Copyright 2017 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """Google Cloud Speech API sample application using the streaming API.
 
 NOTE: This module requires the additional dependency `pyaudio`. To install
@@ -18,36 +34,11 @@ import sys
 
 import pyaudio
 from google.cloud import speech
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow
 from six.moves import queue
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "./secrets/gkey.json"
 GOOGLE_APPLICATION_CREDENTIALS = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
 
-####
-class MyWindow(QMainWindow):
-    def __init__(self):
-        super(MyWindow, self).__init__()
-        self.setGeometry(200, 200, 300, 300)
-        self.setWindowTitle("Teckathon")
-        self.initUI()
-
-    def initUI(self):
-        self.label = QtWidgets.QLabel(self)
-        self.label.setText("Test")
-        self.b1 = QtWidgets.QPushButton(self)
-        self.b1.setText("Test")
-        self.b1.clicked.connect(self.clicked)
-        self.label.move(50, 50)
-
-    def clicked(self):
-        self.label.setText("pressed")
-
-
-app = QApplication(sys.argv)
-win = MyWindow()
-####
 # Audio recording parameters
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
@@ -161,8 +152,9 @@ def listen_print_loop(responses):
         if not result.is_final:
             # win.label.setText((transcript + overwrite_chars + "\r"))
             with open("./random_tests/transcript.txt", "w") as f:
-
-                f.write(str({transcript: result.alternatives[0]}))
+                f.write(transcript)
+            with open("./random_tests/confidence.txt", "a") as f:
+                f.write(str(result.alternatives[0].confidence)) #wut happened here in the previous commti I have no idea
 
             sys.stdout.write(transcript + overwrite_chars + "\r")
             sys.stdout.flush()
@@ -182,12 +174,7 @@ def listen_print_loop(responses):
 
 
 def main():
-    # win.show()
-    # window()
-    # See http://g.co/cloud/speech/docs/languages
-    # for a list of supported languages.
     language_code = "ar-JO"  # a BCP-47 language tag
-
     client = speech.SpeechClient()
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -214,14 +201,5 @@ def main():
         listen_print_loop(responses)
 
 
-# qt starts here
-
-
-# def window():
-#     sys.exit(app.exec_())
-
-
 if __name__ == "__main__":
     main()
-    # window()
-# [END speech_transcribe_streaming_mic]
