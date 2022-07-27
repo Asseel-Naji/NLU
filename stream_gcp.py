@@ -8,6 +8,7 @@ import os
 import queue
 import re
 import sys
+from urllib import response
 
 import pyaudio
 import six
@@ -85,36 +86,34 @@ class MicrophoneStream(object):
             yield b"".join(data)
 
 
-class StartTalking(object):
+class StartTalking():
     def __init__(self, language_code="ar-JO", enable_word_confidence=True):
-        self.language_code = language_code
-        self.enable_word_confidence = enable_word_confidence
-        self.client = speech.SpeechClient()
-        self.config = speech.RecognitionConfig(
+        client = speech.SpeechClient()
+        config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=RATE,
-            language_code=self.language_code,
-            enable_word_confidence=self.enable_word_confidence,
+            language_code=language_code,
+            enable_word_confidence=enable_word_confidence,
         )
 
-        self.streaming_config = speech.StreamingRecognitionConfig(
-            config=self.config, interim_results=True
+        streaming_config = speech.StreamingRecognitionConfig(
+            config=config, interim_results=True
         )
 
-        with MicrophoneStream(self) as stream:
-            self.audio_generator = stream.generator()
+        with MicrophoneStream(RATE, CHUNK) as stream:
+            audio_generator = stream.generator()
             print("Please start talking")
 
             requests = (
                 speech.StreamingRecognizeRequest(audio_content=content)
-                for content in self.audio_generator
+                for content in audio_generator
             )
 
-            self.responses = self.client.streaming_recognize(self.streaming_config, self.requests)
+            responses = client.streaming_recognize(streaming_config, requests)
             # Now, put the transcription responses to use.
-            self.listen_print_loop(self.responses)
+            self.listen_print_loop(responses)
 
-    def listen_print_loop(responses):
+    def listen_print_loop(self, responses):
         num_chars_printed = 0
         for response in responses:
             if not response.results:
@@ -123,13 +122,13 @@ class StartTalking(object):
             # The `results` list is consecutive. For streaming, we only care about
             # the first result being considered, since once it's `is_final`, it
             # moves on to considering the next utterance.
-            @amazonify(before=True, after=True)
+            @amazonify()
             def print_output(transcript:str, confidence:str):
-                full_result = {transcript:confidence}
+                self.full_result = {transcript:confidence}
                 with open("./random_tests/transcript.txt", "w") as f:
-                    f.write(transcript)
+                    f.write(self.transcript)
                 with open("./random_tests/complete_log.txt", "a") as f:
-                    f.write(full_result)
+                    f.write(self.full_result)
             result = response.results[0]
             if not result.alternatives:
                 continue

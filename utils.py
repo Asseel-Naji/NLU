@@ -4,9 +4,9 @@ def amazonify(*args, **kwargs):
     def inner(func):
 
         # code functionality here
-        print("here will be the before function") if kwargs['before'] else None
+        print("here will be the before function")
         func()
-        print("here will be the after function") if kwargs['after'] else None
+        print("here will be the after function")
 
     # returning inner function
     return inner
