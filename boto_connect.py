@@ -11,6 +11,7 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 
 session = boto3.Session(AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
+
 def extract():
     with open("./random_tests/transcript.txt", "r") as f:
         text = f.read()

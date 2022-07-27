@@ -1,52 +1,27 @@
-#!/usr/bin/env python
+# I didn't delete the copyright .. I mean I did but it's annoying,
+# anyway this function is made by google and licensed apache, in case the class name didn't give it out,
+# I mean that's why the about section in github exists, aaaand I just took the same space.
 
-# Copyright 2017 Google Inc. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-"""Google Cloud Speech API sample application using the streaming API.
-
-NOTE: This module requires the additional dependency `pyaudio`. To install
-using pip:
-
-    pip install pyaudio
-
-Example usage:
-    python transcribe_streaming_mic.py
-"""
-
-# [START speech_transcribe_streaming_mic]
 from __future__ import division
-from msvcrt import kbhit
 
 import os
+import queue
 import re
 import sys
 
 import pyaudio
+import six
 from google.cloud import speech
-from six.moves import queue
 
+from config import *
 
-# Audio recording parameters
-RATE = 16000
-CHUNK = int(RATE / 10)  # 100ms
+from utils import *
 
 
 class MicrophoneStream(object):
     """Opens a recording stream as a generator yielding the audio chunks."""
 
-    def __init__(self, rate, chunk):
+    def __init__(self, rate=RATE, chunk=CHUNK):
         self._rate = rate
         self._chunk = chunk
 
@@ -107,36 +82,37 @@ class MicrophoneStream(object):
                     data.append(chunk)
                 except queue.Empty:
                     break
-
             yield b"".join(data)
 
 
-class StartTalking:
+class StartTalking(object):
     def __init__(self, language_code="ar-JO", enable_word_confidence=True):
-        client = speech.SpeechClient()
-        config = speech.RecognitionConfig(
+        self.language_code = language_code
+        self.enable_word_confidence = enable_word_confidence
+        self.client = speech.SpeechClient()
+        self.config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=RATE,
-            language_code=language_code,
-            enable_word_confidence=enable_word_confidence,
+            language_code=self.language_code,
+            enable_word_confidence=self.enable_word_confidence,
         )
 
-        streaming_config = speech.StreamingRecognitionConfig(
-            config=config, interim_results=True
+        self.streaming_config = speech.StreamingRecognitionConfig(
+            config=self.config, interim_results=True
         )
 
-        with MicrophoneStream(RATE, CHUNK) as stream:
-            audio_generator = stream.generator()
+        with MicrophoneStream(self) as stream:
+            self.audio_generator = stream.generator()
             print("Please start talking")
 
             requests = (
                 speech.StreamingRecognizeRequest(audio_content=content)
-                for content in audio_generator
+                for content in self.audio_generator
             )
 
-            responses = client.streaming_recognize(streaming_config, requests)
+            self.responses = self.client.streaming_recognize(self.streaming_config, self.requests)
             # Now, put the transcription responses to use.
-            self.listen_print_loop(responses)
+            self.listen_print_loop(self.responses)
 
     def listen_print_loop(responses):
         num_chars_printed = 0
@@ -147,37 +123,26 @@ class StartTalking:
             # The `results` list is consecutive. For streaming, we only care about
             # the first result being considered, since once it's `is_final`, it
             # moves on to considering the next utterance.
+            @amazonify(before=True, after=True)
+            def print_output(transcript:str, confidence:str):
+                full_result = {transcript:confidence}
+                with open("./random_tests/transcript.txt", "w") as f:
+                    f.write(transcript)
+                with open("./random_tests/complete_log.txt", "a") as f:
+                    f.write(full_result)
             result = response.results[0]
             if not result.alternatives:
                 continue
-
-            # Display the transcription of the top alternative.
             transcript = result.alternatives[0].transcript
-
-            # Display interim results, but with a carriage return at the end of the
-            # line, so subsequent lines will overwrite them.
-            #
-            # If the previous result was longer than this one, we need to print
-            # some extra spaces to overwrite the previous result
+            confidence = result.alternatives[0].confidence
             overwrite_chars = " " * (num_chars_printed - len(transcript))
-
             if not result.is_final:
-                # win.label.setText((transcript + overwrite_chars + "\r"))
-                with open("./random_tests/transcript.txt", "w") as f:
-                    f.write(transcript)
-                with open("./random_tests/confidence.txt", "a") as f:
-                    f.write(
-                        str(result.alternatives[0].confidence)
-                    )  # wut happened here in the previous commti I have no idea
-
+                print_output(transcript, confidence)
                 sys.stdout.write(transcript + overwrite_chars + "\r")
                 sys.stdout.flush()
-
                 num_chars_printed = len(transcript)
-
             else:
                 print(transcript + overwrite_chars)
-
                 # Exit recognition if any of the transcribed phrases could be
                 # one of our keywords.
                 if re.search(r"\b(exit|quit|وقف تسجيل)\b", transcript, re.I):
@@ -185,7 +150,3 @@ class StartTalking:
                     break
 
                 num_chars_printed = 0
-
-
-# if __name__ == "__main__":
-#     main()
