@@ -9,6 +9,7 @@ GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+path_api = os.getenv("api_path")
 
 RATE = 16000
 CHUNK = int(RATE / 10)

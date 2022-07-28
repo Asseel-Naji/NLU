@@ -41,7 +41,10 @@ def translate_text(text, project_id="shining-reality-357514"):
     # Display the translation for each input text provided
     for translation in response.translations:
         print("Translated text: {}".format(translation.translated_text))
+        with open("./random_tests/trans.txt", "w") as f:
+            f.write(str(translation.translated_text))
 
+        return(complete_product(text))
 prompt_products = """I feel tired when I set for a long time on the computer:
 A standup desk.
 

@@ -11,7 +11,6 @@ from urllib import response
 
 import pyaudio
 import six
-from google.cloud import speech, translate
 
 from config import *
 from utils import *
