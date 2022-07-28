@@ -4,7 +4,6 @@
 
 from __future__ import division
 
-import os
 import queue
 import re
 import sys
@@ -12,10 +11,9 @@ from urllib import response
 
 import pyaudio
 import six
-from google.cloud import speech
+from google.cloud import speech, translate
 
 from config import *
-
 from utils import *
 
 
@@ -86,7 +84,7 @@ class MicrophoneStream(object):
             yield b"".join(data)
 
 
-class StartTalking():
+class StartTalking:
     def __init__(self, language_code="ar-JO", enable_word_confidence=True):
         client = speech.SpeechClient()
         config = speech.RecognitionConfig(
@@ -122,13 +120,19 @@ class StartTalking():
             # The `results` list is consecutive. For streaming, we only care about
             # the first result being considered, since once it's `is_final`, it
             # moves on to considering the next utterance.
-            @amazonify()
-            def print_output(transcript:str, confidence:str):
-                self.full_result = {transcript:confidence}
+            def print_output(self, transcript, confidence):
+                full_result = {transcript, confidence}
                 with open("./random_tests/transcript.txt", "w") as f:
-                    f.write(self.transcript)
+                    f.write(str(transcript))
                 with open("./random_tests/complete_log.txt", "a") as f:
-                    f.write(self.full_result)
+                    f.write(str(full_result))
+                with open("./random_tests/transcript.txt", "r") as f:
+                    length_of_text = len(f.read())
+                if length_of_text >= 30:
+                    translated = translate_text(transcript)
+                    print(translated)
+
+
             result = response.results[0]
             if not result.alternatives:
                 continue
@@ -136,7 +140,7 @@ class StartTalking():
             confidence = result.alternatives[0].confidence
             overwrite_chars = " " * (num_chars_printed - len(transcript))
             if not result.is_final:
-                print_output(transcript, confidence)
+                print_output(self, transcript, confidence)
                 sys.stdout.write(transcript + overwrite_chars + "\r")
                 sys.stdout.flush()
                 num_chars_printed = len(transcript)

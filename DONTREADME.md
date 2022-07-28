@@ -17,3 +17,11 @@ I promise the code will look much better next time I upload.
 I know if you're looking at the code at this point it looks sad, as if someone picked up the first google api they could find. But I swear I was trying EVERYTHING that was supposed to happen after, I didn't want my push to be just a lonely api and an api check with gpt3, but alas, it just took me more time.
 
 Just give me a bit.
+
+
+See? told you it will come together... still a bit to go, but once it's done it's gonna blow your mind....
+Also, why am I assuming you're reading the commits backward, you already saw the finished code and know it's pretty bad :/
+
+
+well,  it's not that bad, but it's still a bit to go.
+will I be able to finish both video and front end in the next couple of hours
